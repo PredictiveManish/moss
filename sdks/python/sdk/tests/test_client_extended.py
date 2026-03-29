@@ -401,7 +401,7 @@ class TestProjectCredentials:
         assert client._project_id == "test-project"
         assert client._project_key == "test-key"
 
-    def test_credentials_passed_to_manage_client(self, raw_mocks=None):
+    def test_credentials_passed_to_manage_client(self):
         with (
             patch("moss.client.moss_client.ManageClient") as mock_manage,
             patch("moss.client.moss_client.IndexManager"),
