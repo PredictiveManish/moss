@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from importlib.metadata import version
+
 from moss import __version__, MossClient
 from moss.client.moss_client import _get_manage_url, _get_query_url
 
@@ -270,7 +272,7 @@ class TestVersionExport:
         assert len(__version__) > 0
 
     def test_version_format(self):
-        assert __version__ == "1.0.0b19"
+        assert __version__ == version("moss")
 
 
 class TestQueryOptionsBehavior:
