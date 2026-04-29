@@ -25,7 +25,7 @@ class PPTXParser(BaseParser):
 
         documents = []
         prs = Presentation(file_path)
-        
+
         for slide_num, slide in enumerate(prs.slides):
             text_runs = []
             for shape in slide.shapes:
@@ -34,7 +34,7 @@ class PPTXParser(BaseParser):
                 for paragraph in shape.text_frame.paragraphs:
                     for run in paragraph.runs:
                         text_runs.append(run.text)
-            text = '\n'.join(text_runs)
+            text = "\n".join(text_runs)
             if text.strip():  # Only add non-empty slides
                 doc_id = f"{file_path}_slide_{slide_num}"
                 metadata = {

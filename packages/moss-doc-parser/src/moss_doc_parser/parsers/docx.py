@@ -25,7 +25,7 @@ class DocxParser(BaseParser):
 
         documents = []
         doc = DocxDocument(file_path)
-        
+
         for para_num, paragraph in enumerate(doc.paragraphs):
             text = paragraph.text
             if text.strip():  # Only add non-empty paragraphs
@@ -33,7 +33,9 @@ class DocxParser(BaseParser):
                 metadata = {
                     "source_file": file_path,
                     "paragraph_number": para_num + 1,  # 1-indexed for humans
-                    "total_paragraphs": len([p for p in doc.paragraphs if p.text.strip()]),
+                    "total_paragraphs": len(
+                        [p for p in doc.paragraphs if p.text.strip()]
+                    ),
                 }
                 documents.append(
                     MossDocument(

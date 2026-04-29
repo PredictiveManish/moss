@@ -14,7 +14,7 @@ class MarkdownParser(BaseParser):
     """Parser for Markdown files."""
 
     def __init__(self):
-        self.md = markdown.Markdown(extensions=['extra', 'toc'])
+        self.md = markdown.Markdown(extensions=["extra", "toc"])
 
     def parse(self, file_path: str) -> ParseResult:
         """Parse a Markdown file and extract structured content.
@@ -32,16 +32,18 @@ class MarkdownParser(BaseParser):
 
         # Convert markdown to HTML
         html = self.md.convert(markdown_content)
-        
+
         # Parse HTML with BeautifulSoup for structured extraction
         soup = BeautifulSoup(html, "html.parser")
-        
+
         documents = []
         current_header = ""
         header_level = 0
-        
+
         # Process all elements in order
-        for element in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "pre", "li"]):
+        for element in soup.find_all(
+            ["h1", "h2", "h3", "h4", "h5", "h6", "p", "pre", "li"]
+        ):
             if element.name.startswith("h"):
                 # Header element
                 header_level = int(element.name[1])

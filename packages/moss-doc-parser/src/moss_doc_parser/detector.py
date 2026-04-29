@@ -28,6 +28,7 @@ class FileTypeDetector:
         self._magic = None
         try:
             import magic
+
             self._magic = magic.Magic(mime=True)
             self._magic_available = True
         except ImportError:
@@ -46,7 +47,7 @@ class FileTypeDetector:
             ValueError: If no parser is available for the file type.
         """
         # First try extension-based detection
-        extension = file_path.lower().split('.')[-1] if '.' in file_path else ''
+        extension = file_path.lower().split(".")[-1] if "." in file_path else ""
         if extension in self._parsers:
             return self._parsers[extension]()
 
@@ -61,7 +62,7 @@ class FileTypeDetector:
                     "text/html": "html",
                     "text/plain": "md",  # Assume markdown for plain text
                 }
-                
+
                 extension = mime_to_extension.get(mime_type)
                 if extension and extension in self._parsers:
                     return self._parsers[extension]()
