@@ -46,6 +46,9 @@ dev = [
     "griffe>=0.40.0",
     "pyyaml>=6.0",
 ]
+doc-parser = [
+    "moss-doc-parser>=0.1.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/usemoss/moss"

@@ -1,4 +1,4 @@
-"""Load documents from JSON/CSV files or stdin."""
+"""Load documents from JSON/CSV files, document files, or stdin."""
 
 from __future__ import annotations
 
@@ -11,9 +11,17 @@ from typing import Any, List
 import typer
 from moss import DocumentInfo
 
+# Import moss-doc-parser for file parsing
+try:
+    from moss_doc_parser import FileTypeDetector
+    from moss_doc_parser.types import MossDocument
+    DOC_PARSER_AVAILABLE = True
+except ImportError:
+    DOC_PARSER_AVAILABLE = False
+
 
 def load_documents(file_path: str) -> List[DocumentInfo]:
-    """Load documents from a JSON/CSV file or stdin ('-')."""
+    """Load documents from a JSON/CSV file, document file, or stdin ('-')."""
     if file_path == "-":
         raw = sys.stdin.read()
         return _parse_json_docs(raw, source="stdin")
@@ -22,9 +30,13 @@ def load_documents(file_path: str) -> List[DocumentInfo]:
     if not path.exists():
         raise typer.BadParameter(f"File not found: {file_path}")
 
+    # Check if it's a supported document file for parsing
     suffix = path.suffix.lower()
+    if DOC_PARSER_AVAILABLE and suffix in ['.pdf', '.docx', '.pptx', '.html', '.htm', '.md', '.markdown']:
+        return _parse_document_file(str(path))
+    
+    # Otherwise treat as JSON/CSV
     content = path.read_text()
-
     if suffix == ".csv":
         return _parse_csv_docs(content)
     elif suffix == ".jsonl":
@@ -33,6 +45,33 @@ def load_documents(file_path: str) -> List[DocumentInfo]:
         return _parse_json_docs(content, source=file_path)
     else:
         return _parse_json_docs(content, source=file_path)
+
+
+def _parse_document_file(file_path: str) -> List[DocumentInfo]:
+    """Parse a document file using moss-doc-parser and convert to DocumentInfo objects."""
+    if not DOC_PARSER_AVAILABLE:
+        raise typer.BadParameter(
+            f"Document parsing not available. Please install moss-doc-parser to parse {file_path}"
+        )
+    
+    try:
+        detector = FileTypeDetector()
+        parser = detector.get_parser_for_file(file_path)
+        parse_result = parser.parse(file_path)
+        
+        # Convert MossDocument objects to DocumentInfo objects
+        docs = []
+        for doc in parse_result.documents:
+            docs.append(
+                DocumentInfo(
+                    id=doc.id,
+                    text=doc.text,
+                    metadata=doc.metadata,
+                )
+            )
+        return docs
+    except Exception as e:
+        raise typer.BadParameter(f"Failed to parse document {file_path}: {str(e)}")
 
 
 def _parse_json_docs(raw: str, source: str = "input") -> List[DocumentInfo]:

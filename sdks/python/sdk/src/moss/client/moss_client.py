@@ -91,6 +91,66 @@ class MossClient:
             resolved_model_id,
         )
 
+    async def create_index_from_files(
+        self,
+        name: str,
+        file_paths: List[str],
+        model_id: Optional[str] = None,
+    ) -> MutationResult:
+        """Create a new index by parsing files and adding their contents.
+        
+        Supports PDF, DOCX, PPTX, HTML, and Markdown files.
+        Files are parsed into DocumentInfo objects before index creation.
+        
+        Args:
+            name: Name of the index to create
+            file_paths: List of file paths to parse and add to the index
+            model_id: Optional model ID to use for embeddings
+            
+        Returns:
+            MutationResult containing job information
+        """
+        # Import moss-doc-parser here to avoid hard dependency
+        try:
+            from moss_doc_parser import FileTypeDetector
+            from moss_doc_parser.types import MossDocument
+        except ImportError as e:
+            raise ImportError(
+                "moss-doc-parser is required for create_index_from_files. "
+                "Install it with: pip install moss-doc-parser"
+            ) from e
+        
+        # Parse all files
+        all_docs: List[DocumentInfo] = []
+        detector = FileTypeDetector()
+        
+        for file_path in file_paths:
+            try:
+                # Get appropriate parser for file type
+                parser = detector.get_parser_for_file(file_path)
+                # Parse the file
+                parse_result = parser.parse(file_path)
+                # Convert MossDocument objects to DocumentInfo objects
+                for doc in parse_result.documents:
+                    all_docs.append(
+                        DocumentInfo(
+                            id=doc.id,
+                            text=doc.text,
+                            metadata=doc.metadata,
+                        )
+                    )
+            except Exception as e:
+                raise ValueError(f"Failed to parse file {file_path}: {str(e)}")
+        
+        # Create index with parsed documents
+        resolved_model_id = self._resolve_model_id(all_docs, model_id)
+        return await asyncio.to_thread(
+            self._manage.create_index,
+            name,
+            all_docs,
+            resolved_model_id,
+        )
+
     async def add_docs(
         self,
         name: str,

@@ -30,7 +30,7 @@ def _client(ctx: typer.Context) -> MossClient:
 def add(
     ctx: typer.Context,
     index_name: str = typer.Argument(..., help="Index name"),
-    file: str = typer.Option(..., "--file", "-f", help="Path to JSON/CSV document file, or '-' for stdin"),
+    file: str = typer.Option(..., "--file", "-f", help="Path to JSON/CSV document file, or document file (PDF, DOCX, etc.), or '-' for stdin"),
     profile: Optional[str] = typer.Option(
         None, "--profile", help="Credential profile name"
     ),
