@@ -274,7 +274,7 @@ bharat-benefits/
 
 | Package | Version | Purpose |
 |---|---|---|
-| `inferedge-moss` | ≥1.0.0b19 | Moss semantic search SDK |
+| `moss` | ≥1.0.0 | Moss semantic search SDK |
 | `python-dotenv` | ≥1.0.0 | Load `.env` credentials |
 | `httpx` | ≥0.27.0 | Async-friendly HTTP for Sarvam API calls |
 | `sounddevice` | ≥0.4.6 | Microphone recording |
