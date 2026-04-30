@@ -231,22 +231,22 @@ def speak(answer: str) -> None:
     tmp.close()
 
     try:
-        import simpleaudio as sa
-        wave_obj = sa.WaveObject.from_wave_file(tmp.name)
-        play_obj = wave_obj.play()
-        play_obj.wait_done()
-    except ImportError:
-        data, sr = sf.read(tmp.name, dtype="int16")
-        sd.play(data, sr)
-        sd.wait()
+        try:
+            import simpleaudio as sa
+            wave_obj = sa.WaveObject.from_wave_file(tmp.name)
+            play_obj = wave_obj.play()
+            play_obj.wait_done()
+        except ImportError:
+            data, sr = sf.read(tmp.name, dtype="int16")
+            sd.play(data, sr)
+            sd.wait()
     except Exception as e:
         print(f"   WARNING: playback failed: {e}")
-        return
-
-    try:
-        Path(tmp.name).unlink()
-    except Exception:
-        pass
+    finally:
+        try:
+            Path(tmp.name).unlink()
+        except Exception:
+            pass
 
 
 # -- Main loop ----------------------------------------------------------------
