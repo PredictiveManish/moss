@@ -149,14 +149,15 @@ Expected output:
 
 ## Running the Bot
 
+```bash
 # Live mic mode (default 5 seconds per turn)
-python live_agent.py
+python bot.py
 
 # Longer recording window
-python live_agent.py --seconds 8
+python bot.py --seconds 8
 
 # Debug without mic (type questions)
-python live_agent.py --text-mode
+python bot.py --text-mode
 
 ### Audio file mode
 
