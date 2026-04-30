@@ -6,7 +6,6 @@ First stable release of the `moss` Python SDK (previously published as `inferedg
 
 **Import path changed:** `from moss import MossClient` (was `from inferedge_moss import ...`)
 
-
 ### Features
 
 - **Semantic search** with built-in on-device models (`moss-minilm`, `moss-mediumlm`); embedding computation runs in Rust for speed; custom embeddings supported via `QueryOptions.embedding`
