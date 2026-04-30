@@ -144,9 +144,9 @@ def transcribe(audio_path: Path) -> str:
 async def retrieve(question: str, moss_client) -> str:
     """Query Moss index for relevant context."""
     try:
-        from inferedge_moss import QueryOptions
+        from moss import QueryOptions
     except ImportError:
-        print("ERROR: run: pip install inferedge-moss", file=sys.stderr)
+        print("ERROR: run: pip install moss", file=sys.stderr)
         sys.exit(1)
 
     print("   searching ...")
@@ -231,22 +231,22 @@ def speak(answer: str) -> None:
     tmp.close()
 
     try:
-        import simpleaudio as sa
-        wave_obj = sa.WaveObject.from_wave_file(tmp.name)
-        play_obj = wave_obj.play()
-        play_obj.wait_done()
-    except ImportError:
-        data, sr = sf.read(tmp.name, dtype="int16")
-        sd.play(data, sr)
-        sd.wait()
+        try:
+            import simpleaudio as sa
+            wave_obj = sa.WaveObject.from_wave_file(tmp.name)
+            play_obj = wave_obj.play()
+            play_obj.wait_done()
+        except ImportError:
+            data, sr = sf.read(tmp.name, dtype="int16")
+            sd.play(data, sr)
+            sd.wait()
     except Exception as e:
         print(f"   WARNING: playback failed: {e}")
-        return
-
-    try:
-        Path(tmp.name).unlink()
-    except Exception:
-        pass
+    finally:
+        try:
+            Path(tmp.name).unlink()
+        except Exception:
+            pass
 
 
 # -- Main loop ----------------------------------------------------------------
@@ -254,9 +254,9 @@ def speak(answer: str) -> None:
 async def live_loop(record_seconds: int = 5, text_mode: bool = False):
     """Continuous voice-to-voice loop."""
     try:
-        from inferedge_moss import MossClient
+        from moss import MossClient
     except ImportError:
-        print("ERROR: run: pip install inferedge-moss", file=sys.stderr)
+        print("ERROR: run: pip install moss", file=sys.stderr)
         sys.exit(1)
 
     _check_env()
