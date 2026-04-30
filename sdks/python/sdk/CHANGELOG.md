@@ -4,7 +4,8 @@
 
 First stable release of the `moss` Python SDK (previously published as `inferedge-moss`).
 
-**Import path changed:** `from moss import MossClient` (was `from moss import ...`)
+**Import path changed:** `from moss import MossClient` (was `from inferedge_moss import ...`)
+
 
 ### Features
 
