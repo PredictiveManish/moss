@@ -61,6 +61,9 @@ class FileTypeDetector:
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
                     "text/html": "html",
                     "text/plain": "md",  # Assume markdown for plain text
+                    # Note: This means plain text files without extensions will be processed as Markdown.
+                    # For files with known extensions (like .txt, .csv), extension-based detection takes precedence.
+                    # This is an acceptable trade-off as the markdown parser gracefully handles plain text.
                 }
 
                 extension = mime_to_extension.get(mime_type)
