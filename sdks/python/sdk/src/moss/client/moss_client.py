@@ -113,7 +113,6 @@ class MossClient:
         # Import moss-doc-parser here to avoid hard dependency
         try:
             from moss_doc_parser import FileTypeDetector
-            from moss_doc_parser.types import MossDocument
         except ImportError as e:
             raise ImportError(
                 "moss-doc-parser is required for create_index_from_files. "
