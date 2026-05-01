@@ -31,7 +31,9 @@ class MarkdownParser(BaseParser):
             markdown_content = f.read()
 
         # Convert markdown to HTML
+        self.md.reset()
         html = self.md.convert(markdown_content)
+
 
         # Parse HTML with BeautifulSoup for structured extraction
         soup = BeautifulSoup(html, "html.parser")
