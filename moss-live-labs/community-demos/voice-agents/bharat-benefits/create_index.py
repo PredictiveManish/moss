@@ -97,7 +97,7 @@ async def main() -> None:
         from moss import DocumentInfo, MossClient
     except ImportError:
         print(
-            "\n[ERROR] inferedge-moss is not installed.\n"
+            "\n[ERROR] moss is not installed.\n"
             "Run:  pip install -r requirements.txt\n",
             file=sys.stderr,
         )
