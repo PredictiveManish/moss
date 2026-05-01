@@ -14,7 +14,7 @@ from moss import DocumentInfo
 # Import moss-doc-parser for file parsing
 try:
     from moss_doc_parser import FileTypeDetector
-    from moss_doc_parser.types import MossDocument
+    
     DOC_PARSER_AVAILABLE = True
 except ImportError:
     DOC_PARSER_AVAILABLE = False
