@@ -170,18 +170,12 @@ describe('uploadDocuments', () => {
       )
     })
 
-    it('should auto-recreate legacy index without version', async () => {
+    it('should throw on legacy index without version', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: null } })
-      mocks.mockDeleteIndex.mockResolvedValue(true)
-      mocks.mockCreateIndex.mockResolvedValue({ jobId: 'job-789' })
 
-      const result = await uploadDocuments(mockDocuments, creds)
-
-      expect(mocks.mockDeleteIndex).toHaveBeenCalledWith('test-index')
-      expect(mocks.mockCreateIndex).toHaveBeenCalledWith('test-index', mockDocuments, {
-        modelId: 'moss-minilm'
-      })
-      expect(result).toEqual({ jobId: 'job-789' })
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow(
+        'built by an older SDK version'
+      )
     })
 
     it('should leave index untouched when documents list is empty', async () => {

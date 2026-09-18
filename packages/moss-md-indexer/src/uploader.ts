@@ -98,18 +98,11 @@ export async function uploadDocuments(
     const isModelMismatch = indexModel && indexModel !== creds.modelName;
 
     if (isLegacy) {
-      console.log(`  🔄 Index "${creds.indexName}" was built by an older SDK version. Recreating...`);
-      await deleteIndex(creds, mossClient);
-      try {
-        const result = await mossClient.createIndex(creds.indexName, documents, {
-          modelId: creds.modelName
-        });
-        console.log(`✅ Recreated index "${creds.indexName}" with ${documents.length} documents.`);
-        return result;
-      } catch (err: any) {
-        const errorMsg = err.response?.data || err.message;
-        throw new Error(`Moss Upload Failed: ${errorMsg}`);
-      }
+      throw new Error(
+        `Index "${creds.indexName}" was built by an older SDK version ` +
+        `and does not support text queries. ` +
+        `Re-run with { recreate: true } to rebuild with the current SDK.`
+      );
     }
 
     if (isModelMismatch) {
