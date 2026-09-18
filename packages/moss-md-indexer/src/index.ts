@@ -2,7 +2,7 @@ import path from 'node:path'
 import pc from 'picocolors'
 import dotenv from 'dotenv'
 import { buildJsonDocs } from './builder.js'
-import { uploadDocuments } from './uploader.js'
+import { uploadDocuments, type UploadOptions } from './uploader.js'
 import type { MossCreds } from './types.js'
 
 // Re-export functions for advanced usage
@@ -15,6 +15,7 @@ dotenv.config()
 
 export interface SyncOptions {
   root?: string
+  recreate?: boolean
   creds?: {
     projectId: string
     projectKey: string
@@ -70,7 +71,7 @@ export async function sync(options: SyncOptions = {}) {
 
     // Step 2: Upload
     console.log(pc.blue('\nStep 2: Uploading to Moss...'))
-    await uploadDocuments(documents, creds)
+    await uploadDocuments(documents, creds, { recreate: options.recreate })
 
     console.log(pc.green(`\n Sync Successfully Completed!\n`))
     return { success: true, count: documents.length }
