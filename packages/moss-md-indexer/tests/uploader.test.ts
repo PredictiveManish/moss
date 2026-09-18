@@ -156,7 +156,7 @@ describe('uploadDocuments', () => {
 
     it('should warn on model mismatch', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn')
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-mediumlm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-mediumlm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([])
       mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
 
@@ -164,6 +164,32 @@ describe('uploadDocuments', () => {
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('built with model "moss-mediumlm"')
+      )
+    })
+
+    it('should warn on custom model mismatch', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn')
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'custom', version: '1.0.0' } })
+      mocks.mockGetDocs.mockResolvedValue([])
+      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
+
+      await uploadDocuments(mockDocuments, creds)
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('built with model "custom"')
+      )
+    })
+
+    it('should warn on legacy index without version', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn')
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: null } })
+      mocks.mockGetDocs.mockResolvedValue([])
+      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
+
+      await uploadDocuments(mockDocuments, creds)
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('built by an older SDK version')
       )
     })
 

@@ -7,7 +7,7 @@ import type { MossCreds } from './types.js'
 
 // Re-export functions for advanced usage
 export { buildJsonDocs, type BuildOptions } from './builder.js'
-export { uploadDocuments, createIndex } from './uploader.js'
+export { uploadDocuments, createIndex, type UploadOptions } from './uploader.js'
 export type { MossDocument, MossMetadata, MossCreds } from './types.js'
 
 // Load environment variables

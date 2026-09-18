@@ -65,7 +65,7 @@ export async function uploadDocuments(
     // Non-destructive upsert (default): preserve live index during rebuild
     // Check if index exists - this runs outside the upload error wrapper
     // so auth/network errors propagate with their original type
-    let indexInfo: { name: string; model?: { id?: string | null } } | null = null;
+    let indexInfo: { name: string; model?: { id?: string | null; version?: string | null }; version?: string | null } | null = null;
     try {
       indexInfo = await mossClient.getIndex(creds.indexName);
     } catch (err: any) {
@@ -90,8 +90,20 @@ export async function uploadDocuments(
     }
 
     // Index exists - check model compatibility
+    // Legacy indexes (built by old SDK) have no version/artifact identity
+    // and won't work with text queries in the new SDK
     const indexModel = indexInfo.model?.id;
-    if (indexModel && indexModel !== 'custom' && indexModel !== creds.modelName) {
+    const indexVersion = indexInfo.model?.version;
+    const isLegacy = !indexVersion;
+    const isModelMismatch = indexModel && indexModel !== creds.modelName;
+
+    if (isLegacy) {
+      console.warn(
+        `  ⚠️  Index "${creds.indexName}" was built by an older SDK version ` +
+        `and may not support text queries. ` +
+        `Re-run with { recreate: true } to rebuild with the current SDK.`
+      );
+    } else if (isModelMismatch) {
       console.warn(
         `  ⚠️  Index "${creds.indexName}" was built with model "${indexModel}" ` +
         `but you're using "${creds.modelName}". ` +
@@ -119,11 +131,11 @@ export async function uploadDocuments(
   }
 }
 
-export async function createIndex(jsonPath: string, creds: MossCreds) {
+export async function createIndex(jsonPath: string, creds: MossCreds, options?: UploadOptions) {
   if (!fs.existsSync(jsonPath)) {
     throw new Error(`JSON file not found at ${jsonPath}`);
   }
 
   const documents: MossDocument[] = await fs.readJSON(jsonPath);
-  return uploadDocuments(documents, creds);
+  return uploadDocuments(documents, creds, options);
 }
