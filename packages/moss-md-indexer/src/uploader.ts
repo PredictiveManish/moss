@@ -62,7 +62,8 @@ export async function uploadDocuments(
     }
 
     // Non-destructive upsert (default): preserve live index during rebuild
-    // Check if index exists
+    // Check if index exists - this runs outside the upload error wrapper
+    // so auth/network errors propagate with their original type
     let indexInfo: { name: string; model?: { id?: string | null } } | null = null;
     try {
       indexInfo = await mossClient.getIndex(creds.indexName);
@@ -103,7 +104,6 @@ export async function uploadDocuments(
 
     // Index exists: upsert new docs and delete stale ones
     if (documents.length === 0) {
-      // Empty source set on existing index - delete everything
       const existingDocs = await mossClient.getDocs(creds.indexName);
       if (existingDocs.length > 0) {
         await mossClient.deleteDocs(creds.indexName, existingDocs.map(d => d.id));
