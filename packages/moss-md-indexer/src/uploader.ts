@@ -98,14 +98,16 @@ export async function uploadDocuments(
     const isModelMismatch = indexModel && indexModel !== creds.modelName;
 
     if (isLegacy) {
-      console.warn(
-        `  ⚠️  Index "${creds.indexName}" was built by an older SDK version ` +
-        `and may not support text queries. ` +
+      throw new Error(
+        `Index "${creds.indexName}" was built by an older SDK version ` +
+        `and does not support text queries. ` +
         `Re-run with { recreate: true } to rebuild with the current SDK.`
       );
-    } else if (isModelMismatch) {
-      console.warn(
-        `  ⚠️  Index "${creds.indexName}" was built with model "${indexModel}" ` +
+    }
+
+    if (isModelMismatch) {
+      throw new Error(
+        `Index "${creds.indexName}" was built with model "${indexModel}" ` +
         `but you're using "${creds.modelName}". ` +
         `Re-run with { recreate: true } to rebuild with the correct model.`
       );

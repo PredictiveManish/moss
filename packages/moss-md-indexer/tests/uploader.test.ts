@@ -100,7 +100,7 @@ describe('uploadDocuments', () => {
 
   describe('when index exists', () => {
     it('should upsert documents and delete stale ones', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'doc-1', text: 'Old version' },
         { id: 'doc-3', text: 'Stale document' },
@@ -117,7 +117,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should return the addDocs result', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([])
       const expectedResult = { jobId: 'job-456' }
       mocks.mockAddDocs.mockResolvedValue(expectedResult)
@@ -128,7 +128,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should not delete anything when no stale documents', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'doc-1', text: 'Document 1' },
         { id: 'doc-2', text: 'Document 2' },
@@ -141,7 +141,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should delete all existing documents when new set is empty of old IDs', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'old-1', text: 'Old document 1' },
         { id: 'old-2', text: 'Old document 2' },
@@ -154,42 +154,27 @@ describe('uploadDocuments', () => {
       expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['old-1', 'old-2'])
     })
 
-    it('should warn on model mismatch', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn')
+    it('should throw on model mismatch', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-mediumlm', version: '1.0.0' } })
-      mocks.mockGetDocs.mockResolvedValue([])
-      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
 
-      await uploadDocuments(mockDocuments, creds)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('built with model "moss-mediumlm"')
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow(
+        'built with model "moss-mediumlm"'
       )
     })
 
-    it('should warn on custom model mismatch', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn')
+    it('should throw on custom model mismatch', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'custom', version: '1.0.0' } })
-      mocks.mockGetDocs.mockResolvedValue([])
-      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
 
-      await uploadDocuments(mockDocuments, creds)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('built with model "custom"')
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow(
+        'built with model "custom"'
       )
     })
 
-    it('should warn on legacy index without version', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn')
+    it('should throw on legacy index without version', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: null } })
-      mocks.mockGetDocs.mockResolvedValue([])
-      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
 
-      await uploadDocuments(mockDocuments, creds)
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('built by an older SDK version')
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow(
+        'built by an older SDK version'
       )
     })
 
@@ -203,7 +188,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should call close() on the client', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm', version: '1.0.0' } })
       mocks.mockGetDocs.mockResolvedValue([])
       mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
 
