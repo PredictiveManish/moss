@@ -39,16 +39,17 @@ export async function uploadDocuments(
 ) {
   console.log(`  Uploading ${documents.length} documents to Moss...`);
 
+  if (documents.length === 0) {
+    console.warn('  ⚠️  No documents to upload.');
+    return;
+  }
+
   const mossClient = new MossClient(creds.projectId, creds.projectKey);
 
   try {
     // Force recreate: delete then create (legacy behavior)
     if (options?.recreate) {
       await deleteIndex(creds, mossClient);
-      if (documents.length === 0) {
-        console.warn('  ⚠️  No documents to upload.');
-        return;
-      }
       try {
         const result = await mossClient.createIndex(creds.indexName, documents, {
           modelId: creds.modelName
@@ -76,10 +77,6 @@ export async function uploadDocuments(
     }
 
     if (!indexInfo) {
-      if (documents.length === 0) {
-        console.warn('  ⚠️  No documents to upload.');
-        return;
-      }
       try {
         const result = await mossClient.createIndex(creds.indexName, documents, {
           modelId: creds.modelName
@@ -103,11 +100,6 @@ export async function uploadDocuments(
     }
 
     // Index exists: upsert new docs and delete stale ones
-    if (documents.length === 0) {
-      console.warn('  ⚠️  No documents to upload. Existing index left untouched.');
-      return;
-    }
-
     const newIds = new Set(documents.map(d => d.id));
     const existingDocs = await mossClient.getDocs(creds.indexName);
     const existingIds = existingDocs.map(d => d.id);

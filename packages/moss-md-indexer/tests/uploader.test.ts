@@ -168,10 +168,9 @@ describe('uploadDocuments', () => {
     })
 
     it('should leave index untouched when documents list is empty', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
-
       await uploadDocuments([], creds)
 
+      expect(mocks.mockGetIndex).not.toHaveBeenCalled()
       expect(mocks.mockGetDocs).not.toHaveBeenCalled()
       expect(mocks.mockDeleteDocs).not.toHaveBeenCalled()
       expect(mocks.mockAddDocs).not.toHaveBeenCalled()
@@ -220,16 +219,16 @@ describe('uploadDocuments', () => {
     })
   })
 
-  describe('when document list is empty and index does not exist', () => {
-    it('should do nothing and warn', async () => {
+  describe('when document list is empty', () => {
+    it('should do nothing and warn without calling any API', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn')
-      mocks.mockGetIndex.mockRejectedValue(new Error('Index not found'))
 
       await uploadDocuments([], creds)
 
       expect(consoleWarnSpy).toHaveBeenCalledWith('  ⚠️  No documents to upload.')
-      expect(mocks.mockGetIndex).toHaveBeenCalledWith('test-index')
+      expect(mocks.mockGetIndex).not.toHaveBeenCalled()
       expect(mocks.mockCreateIndex).not.toHaveBeenCalled()
+      expect(mocks.mockClose).not.toHaveBeenCalled()
     })
   })
 
