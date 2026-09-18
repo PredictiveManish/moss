@@ -93,7 +93,7 @@ export async function uploadDocuments(
     // Legacy indexes (built by old SDK) have no version/artifact identity
     // and won't work with text queries in the new SDK
     const indexModel = indexInfo.model?.id;
-    const indexVersion = indexInfo.model?.version;
+    const indexVersion = indexInfo.version;
     const isLegacy = !indexVersion;
     const isModelMismatch = indexModel && indexModel !== creds.modelName;
 
