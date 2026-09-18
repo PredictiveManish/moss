@@ -11,7 +11,7 @@
 - Non-destructive index updates by default
   - `uploadDocuments()` now upserts new documents and deletes stale ones instead of deleting the entire index
   - The live index stays available during rebuilds, preventing search downtime
-  - If upload fails, the existing index remains intact (no data loss)
+  - If an update fails, the existing index is not deleted, though partial updates may remain
 - `recreate` option in `UploadOptions` to force legacy delete-then-create behavior
 - Unit tests for `uploader.ts` with mocked MossClient
 

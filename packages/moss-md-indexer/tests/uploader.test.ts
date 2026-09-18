@@ -105,6 +105,17 @@ describe('uploadDocuments', () => {
       expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['doc-3'])
     })
 
+    it('should return the addDocs result', async () => {
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
+      mocks.mockGetDocs.mockResolvedValue([])
+      const expectedResult = { jobId: 'job-456' }
+      mocks.mockAddDocs.mockResolvedValue(expectedResult)
+
+      const result = await uploadDocuments(mockDocuments, creds)
+
+      expect(result).toEqual(expectedResult)
+    })
+
     it('should not delete anything when no stale documents', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
       mocks.mockGetDocs.mockResolvedValue([
@@ -130,6 +141,21 @@ describe('uploadDocuments', () => {
       await uploadDocuments(mockDocuments, creds)
 
       expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['old-1', 'old-2'])
+    })
+  })
+
+  describe('when getIndex fails with non-not-found error', () => {
+    it('should rethrow auth errors', async () => {
+      mocks.mockGetIndex.mockRejectedValue(new Error('Unauthorized'))
+
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow('Unauthorized')
+      expect(mocks.mockCreateIndex).not.toHaveBeenCalled()
+    })
+
+    it('should rethrow network errors', async () => {
+      mocks.mockGetIndex.mockRejectedValue(new Error('Network timeout'))
+
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow('Network timeout')
     })
   })
 

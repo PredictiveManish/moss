@@ -65,7 +65,11 @@ export async function uploadDocuments(
     try {
       await mossClient.getIndex(creds.indexName);
       indexExists = true;
-    } catch {
+    } catch (err: any) {
+      const msg = String(err?.message ?? '').toLowerCase();
+      if (!msg.includes('not found') && !msg.includes('does not exist')) {
+        throw err;
+      }
       // Index doesn't exist - we'll create it
     }
 
@@ -82,7 +86,7 @@ export async function uploadDocuments(
     const existingDocs = await mossClient.getDocs(creds.indexName);
     const existingIds = existingDocs.map(d => d.id);
 
-    await mossClient.addDocs(creds.indexName, documents, { upsert: true });
+    const result = await mossClient.addDocs(creds.indexName, documents, { upsert: true });
 
     const staleIds = existingIds.filter(id => !newIds.has(id));
     if (staleIds.length > 0) {
@@ -91,6 +95,7 @@ export async function uploadDocuments(
     }
 
     console.log(`✅ Upserted ${documents.length} documents to index "${creds.indexName}".`);
+    return result;
   } catch (err: any) {
     const errorMsg = err.response?.data || err.message;
     throw new Error(`Moss Upload Failed: ${errorMsg}`);
