@@ -167,16 +167,13 @@ describe('uploadDocuments', () => {
       )
     })
 
-    it('should delete all docs when documents list is empty', async () => {
+    it('should leave index untouched when documents list is empty', async () => {
       mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
-      mocks.mockGetDocs.mockResolvedValue([
-        { id: 'doc-1', text: 'Document 1' },
-        { id: 'doc-2', text: 'Document 2' },
-      ])
 
       await uploadDocuments([], creds)
 
-      expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['doc-1', 'doc-2'])
+      expect(mocks.mockGetDocs).not.toHaveBeenCalled()
+      expect(mocks.mockDeleteDocs).not.toHaveBeenCalled()
       expect(mocks.mockAddDocs).not.toHaveBeenCalled()
     })
 

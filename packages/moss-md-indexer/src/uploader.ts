@@ -104,12 +104,7 @@ export async function uploadDocuments(
 
     // Index exists: upsert new docs and delete stale ones
     if (documents.length === 0) {
-      const existingDocs = await mossClient.getDocs(creds.indexName);
-      if (existingDocs.length > 0) {
-        await mossClient.deleteDocs(creds.indexName, existingDocs.map(d => d.id));
-        console.log(`  🗑️  Removed ${existingDocs.length} documents (empty source set)`);
-      }
-      console.log(`✅ Cleared index "${creds.indexName}".`);
+      console.warn('  ⚠️  No documents to upload. Existing index left untouched.');
       return;
     }
 
