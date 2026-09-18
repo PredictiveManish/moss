@@ -13,6 +13,9 @@
     "test": "vitest run"
   },
   "packageManager": "pnpm@10.19.0",
+  "engines": {
+    "node": ">=20.4"
+  },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
     "@types/fs-extra": "^11.0.4",

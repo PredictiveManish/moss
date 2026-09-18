@@ -7,6 +7,7 @@ import type { MossCreds, MossDocument } from './types.js'
  * Silently handles the case where the index doesn't exist.
  */
 export async function deleteIndex(creds: MossCreds, client?: MossClient): Promise<void> {
+  const owned = !client;
   const mossClient = client || new MossClient(creds.projectId, creds.projectKey);
 
   try {
@@ -18,6 +19,8 @@ export async function deleteIndex(creds: MossCreds, client?: MossClient): Promis
     } else {
       console.warn(`  ⚠️  Could not delete index "${creds.indexName}": ${err.message}`);
     }
+  } finally {
+    if (owned) await mossClient.close();
   }
 }
 
@@ -36,52 +39,80 @@ export async function uploadDocuments(
 ) {
   console.log(`  Uploading ${documents.length} documents to Moss...`);
 
-  if (documents.length === 0) {
-    console.warn('  ⚠️  No documents to upload.');
-    return;
-  }
-
   const mossClient = new MossClient(creds.projectId, creds.projectKey);
 
-  // Force recreate: delete then create (legacy behavior)
-  if (options?.recreate) {
-    await deleteIndex(creds, mossClient);
-    try {
-      const result = await mossClient.createIndex(creds.indexName, documents, {
-        modelId: creds.modelName
-      });
-      console.log(`✅ Upload success! Index "${creds.indexName}" is live.`);
-      return result;
-    } catch (err: any) {
-      const errorMsg = err.response?.data || err.message;
-      throw new Error(`Moss Upload Failed: ${errorMsg}`);
-    }
-  }
-
-  // Non-destructive upsert (default): preserve live index during rebuild
   try {
+    // Force recreate: delete then create (legacy behavior)
+    if (options?.recreate) {
+      await deleteIndex(creds, mossClient);
+      if (documents.length === 0) {
+        console.warn('  ⚠️  No documents to upload.');
+        return;
+      }
+      try {
+        const result = await mossClient.createIndex(creds.indexName, documents, {
+          modelId: creds.modelName
+        });
+        console.log(`✅ Upload success! Index "${creds.indexName}" is live.`);
+        return result;
+      } catch (err: any) {
+        const errorMsg = err.response?.data || err.message;
+        throw new Error(`Moss Upload Failed: ${errorMsg}`);
+      }
+    }
+
+    // Non-destructive upsert (default): preserve live index during rebuild
     // Check if index exists
-    let indexExists = false;
+    let indexInfo: { name: string; model?: { id?: string | null } } | null = null;
     try {
-      await mossClient.getIndex(creds.indexName);
-      indexExists = true;
+      indexInfo = await mossClient.getIndex(creds.indexName);
     } catch (err: any) {
       const msg = String(err?.message ?? '').toLowerCase();
       if (!msg.includes('not found') && !msg.includes('does not exist')) {
         throw err;
       }
-      // Index doesn't exist - we'll create it
+      // Index doesn't exist - we'll create it below
     }
 
-    if (!indexExists) {
-      const result = await mossClient.createIndex(creds.indexName, documents, {
-        modelId: creds.modelName
-      });
-      console.log(`✅ Created new index "${creds.indexName}" with ${documents.length} documents.`);
-      return result;
+    if (!indexInfo) {
+      if (documents.length === 0) {
+        console.warn('  ⚠️  No documents to upload.');
+        return;
+      }
+      try {
+        const result = await mossClient.createIndex(creds.indexName, documents, {
+          modelId: creds.modelName
+        });
+        console.log(`✅ Created new index "${creds.indexName}" with ${documents.length} documents.`);
+        return result;
+      } catch (err: any) {
+        const errorMsg = err.response?.data || err.message;
+        throw new Error(`Moss Upload Failed: ${errorMsg}`);
+      }
+    }
+
+    // Index exists - check model compatibility
+    const indexModel = indexInfo.model?.id;
+    if (indexModel && indexModel !== 'custom' && indexModel !== creds.modelName) {
+      console.warn(
+        `  ⚠️  Index "${creds.indexName}" was built with model "${indexModel}" ` +
+        `but you're using "${creds.modelName}". ` +
+        `Re-run with { recreate: true } to rebuild with the correct model.`
+      );
     }
 
     // Index exists: upsert new docs and delete stale ones
+    if (documents.length === 0) {
+      // Empty source set on existing index - delete everything
+      const existingDocs = await mossClient.getDocs(creds.indexName);
+      if (existingDocs.length > 0) {
+        await mossClient.deleteDocs(creds.indexName, existingDocs.map(d => d.id));
+        console.log(`  🗑️  Removed ${existingDocs.length} documents (empty source set)`);
+      }
+      console.log(`✅ Cleared index "${creds.indexName}".`);
+      return;
+    }
+
     const newIds = new Set(documents.map(d => d.id));
     const existingDocs = await mossClient.getDocs(creds.indexName);
     const existingIds = existingDocs.map(d => d.id);
@@ -96,9 +127,8 @@ export async function uploadDocuments(
 
     console.log(`✅ Upserted ${documents.length} documents to index "${creds.indexName}".`);
     return result;
-  } catch (err: any) {
-    const errorMsg = err.response?.data || err.message;
-    throw new Error(`Moss Upload Failed: ${errorMsg}`);
+  } finally {
+    await mossClient.close();
   }
 }
 

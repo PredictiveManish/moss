@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     mockDeleteDocs: vi.fn(),
     mockDeleteIndex: vi.fn(),
     mockGetDocs: vi.fn(),
+    mockClose: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -31,6 +32,7 @@ vi.mock('@moss-dev/moss', () => {
       deleteDocs = mocks.mockDeleteDocs
       deleteIndex = mocks.mockDeleteIndex
       getDocs = mocks.mockGetDocs
+      close = mocks.mockClose
     }
   }
 })
@@ -85,11 +87,20 @@ describe('uploadDocuments', () => {
 
       expect(result).toEqual(expectedResult)
     })
+
+    it('should call close() on the client', async () => {
+      mocks.mockGetIndex.mockRejectedValue(new Error('Index not found'))
+      mocks.mockCreateIndex.mockResolvedValue({ jobId: 'job-123' })
+
+      await uploadDocuments(mockDocuments, creds)
+
+      expect(mocks.mockClose).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('when index exists', () => {
     it('should upsert documents and delete stale ones', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'doc-1', text: 'Old version' },
         { id: 'doc-3', text: 'Stale document' },
@@ -106,7 +117,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should return the addDocs result', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
       mocks.mockGetDocs.mockResolvedValue([])
       const expectedResult = { jobId: 'job-456' }
       mocks.mockAddDocs.mockResolvedValue(expectedResult)
@@ -117,7 +128,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should not delete anything when no stale documents', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'doc-1', text: 'Document 1' },
         { id: 'doc-2', text: 'Document 2' },
@@ -130,7 +141,7 @@ describe('uploadDocuments', () => {
     })
 
     it('should delete all existing documents when new set is empty of old IDs', async () => {
-      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index' })
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
       mocks.mockGetDocs.mockResolvedValue([
         { id: 'old-1', text: 'Old document 1' },
         { id: 'old-2', text: 'Old document 2' },
@@ -141,6 +152,42 @@ describe('uploadDocuments', () => {
       await uploadDocuments(mockDocuments, creds)
 
       expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['old-1', 'old-2'])
+    })
+
+    it('should warn on model mismatch', async () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn')
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-mediumlm' } })
+      mocks.mockGetDocs.mockResolvedValue([])
+      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
+
+      await uploadDocuments(mockDocuments, creds)
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('built with model "moss-mediumlm"')
+      )
+    })
+
+    it('should delete all docs when documents list is empty', async () => {
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetDocs.mockResolvedValue([
+        { id: 'doc-1', text: 'Document 1' },
+        { id: 'doc-2', text: 'Document 2' },
+      ])
+
+      await uploadDocuments([], creds)
+
+      expect(mocks.mockDeleteDocs).toHaveBeenCalledWith('test-index', ['doc-1', 'doc-2'])
+      expect(mocks.mockAddDocs).not.toHaveBeenCalled()
+    })
+
+    it('should call close() on the client', async () => {
+      mocks.mockGetIndex.mockResolvedValue({ name: 'test-index', model: { id: 'moss-minilm' } })
+      mocks.mockGetDocs.mockResolvedValue([])
+      mocks.mockAddDocs.mockResolvedValue({ jobId: 'job-456' })
+
+      await uploadDocuments(mockDocuments, creds)
+
+      expect(mocks.mockClose).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -157,6 +204,13 @@ describe('uploadDocuments', () => {
 
       await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow('Network timeout')
     })
+
+    it('should call close() even on error', async () => {
+      mocks.mockGetIndex.mockRejectedValue(new Error('Unauthorized'))
+
+      await expect(uploadDocuments(mockDocuments, creds)).rejects.toThrow()
+      expect(mocks.mockClose).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('when createIndex fails', () => {
@@ -169,14 +223,15 @@ describe('uploadDocuments', () => {
     })
   })
 
-  describe('when document list is empty', () => {
+  describe('when document list is empty and index does not exist', () => {
     it('should do nothing and warn', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn')
+      mocks.mockGetIndex.mockRejectedValue(new Error('Index not found'))
 
       await uploadDocuments([], creds)
 
       expect(consoleWarnSpy).toHaveBeenCalledWith('  ⚠️  No documents to upload.')
-      expect(mocks.mockGetIndex).not.toHaveBeenCalled()
+      expect(mocks.mockGetIndex).toHaveBeenCalledWith('test-index')
       expect(mocks.mockCreateIndex).not.toHaveBeenCalled()
     })
   })
@@ -251,5 +306,23 @@ describe('deleteIndex', () => {
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       '  ⚠️  Could not delete index "test-index": Permission denied'
     )
+  })
+
+  it('should close client when it created it', async () => {
+    mocks.mockDeleteIndex.mockResolvedValue(true)
+
+    await deleteIndex(creds)
+
+    expect(mocks.mockClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('should not close client when one was passed in', async () => {
+    const { MossClient } = await import('@moss-dev/moss')
+    const passedClient = new MossClient('', '')
+    mocks.mockDeleteIndex.mockResolvedValue(true)
+
+    await deleteIndex(creds, passedClient)
+
+    expect(mocks.mockClose).not.toHaveBeenCalled()
   })
 })
