@@ -79,7 +79,7 @@ def extract_page_title(markdown: str, metadata: dict | None = None, url: str = "
 
     # 3. Fallback: extract from URL path
     if url:
-        path = url.rstrip("/").split("/")[-1]
+        path = url.split("?", 1)[0].split("#", 1)[0].rstrip("/").split("/")[-1]
         if path and path not in ("index", "home", ""):
             # Convert slug to title
             title = path.replace("-", " ").replace("_", " ").title()
