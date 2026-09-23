@@ -66,9 +66,10 @@ def extract_page_title(markdown: str, metadata: dict | None = None, url: str = "
     """
     # 1. Try to get title from metadata (most reliable for crawled pages)
     if metadata:
-        title = metadata.get("title") or metadata.get("og_title")
-        if title and not _is_site_generic_title(title):
-            return title.strip(), "metadata"
+        for key in ("title", "og_title"):
+            title = metadata.get(key)
+            if title and not _is_site_generic_title(title):
+                return title.strip(), "metadata"
 
     # 2. Try first H1 in markdown
     match = TITLE_PATTERNS[0].search(markdown)
